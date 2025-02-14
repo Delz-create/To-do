@@ -1,6 +1,6 @@
-### To Do 
+# To Do 
 
-## My To-do list features
+### My To-do list features
 
 1. Edit Task
 Allow users to edit an existing task. You can add an "Edit" button next to each task that will turn the task text into an input field where the user can modify the task.
