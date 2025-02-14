@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { IoMdRemoveCircleOutline } from "react-icons/io";
 import { MdShare } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
