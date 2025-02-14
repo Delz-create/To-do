@@ -1,10 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { IoMdRemoveCircleOutline } from "react-icons/io";
-import { MdShare } from "react-icons/md";
-import { FaRegEdit } from "react-icons/fa";
-
-
-
+import React, { useState, useEffect } from "react";
 
 function ToDo() {
   const [task, setTask] = useState("");
@@ -19,6 +13,7 @@ function ToDo() {
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState("medium");
 
+  // Load tasks and id from localStorage on mount
   useEffect(() => {
     const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
     const savedId = JSON.parse(localStorage.getItem("id")) || 1;
@@ -26,33 +21,26 @@ function ToDo() {
     setId(savedId);
   }, []);
 
+  // Save tasks and id to localStorage when they change
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(lists));
     localStorage.setItem("id", JSON.stringify(id));
   }, [lists, id]);
 
+  // Filter tasks based on current filter
   const filteredTasks = lists.filter((task) => {
     if (filter === "completed") return task.completed;
     if (filter === "incomplete") return !task.completed;
     return true;
   });
 
-  const onDragEnd = useCallback((result) => {
-    if (!result.destination) return;
-
-    setList((prevList) => {
-      const items = Array.from(prevList);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      return items;
-    });
-  }, []);
-
+  // Show notifications
   const showNotification = (message, type) => {
     setNotification({ message, type });
     setTimeout(() => setNotification({ message: "", type: "" }), 3000);
   };
 
+  // Add a new task
   const submitTask = (e) => {
     e.preventDefault();
     const trimmedTask = task.trim();
@@ -71,11 +59,13 @@ function ToDo() {
     }
   };
 
+  // Delete a task
   const handleDelete = (id) => {
     setList(lists.filter((task) => task.id !== id));
     showNotification("Task deleted successfully!", "success");
   };
 
+  // Toggle task completion
   const toggleCompletion = (id) => {
     setList(
       lists.map((task) =>
@@ -84,6 +74,7 @@ function ToDo() {
     );
   };
 
+  // Start editing a task
   const startEditing = (task) => {
     setEditingTaskId(task.id);
     setEditedTaskValue(task.value);
@@ -91,6 +82,7 @@ function ToDo() {
     setEditedPriority(task.priority || "medium");
   };
 
+  // Save edited task
   const saveEditedTask = (id) => {
     const trimmedValue = editedTaskValue.trim();
 
@@ -124,6 +116,7 @@ function ToDo() {
     showNotification("Task updated successfully!", "success");
   };
 
+  // Cancel editing
   const cancelEditing = () => {
     setEditingTaskId(null);
     setEditedTaskValue("");
@@ -131,6 +124,7 @@ function ToDo() {
     setEditedPriority("medium");
   };
 
+  // Share a task
   const shareTask = (taskId) => {
     const taskToShare = lists.find((task) => task.id === taskId);
     if (!taskToShare) return;
@@ -156,6 +150,7 @@ function ToDo() {
       <div className="body">
         <Notification message={notification.message} type={notification.type} />
 
+        {/* Add Filter Buttons */}
         <div className="filters">
           <button
             className={filter === "all" ? "active" : ""}
@@ -178,99 +173,70 @@ function ToDo() {
         </div>
 
         <div className="list-body">
-          <DragDropContext onDragEnd={onDragEnd}>
-            {filteredTasks.length > 0 ? (
-              <Droppable droppableId="tasks">
-                {(provided) => (
-                  <ul
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="task-list"
-                  >
-                    {filteredTasks.map((task, index) => (
-                      <Draggable
-                        key={task.id}
-                        draggableId={task.id.toString()}
-                        index={index}
+          {filteredTasks.length > 0 ? (
+            <ul className="task-list">
+              {filteredTasks.map((task) => (
+                <div key={task.id} className={`list ${task.priority}`}>
+                  {editingTaskId === task.id ? (
+                    <div className="edit-mode">
+                      <input
+                        type="text"
+                        value={editedTaskValue}
+                        onChange={(e) => setEditedTaskValue(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && saveEditedTask(task.id)}
+                        autoFocus
+                      />
+                      <input
+                        type="date"
+                        value={editedDueDate}
+                        onChange={(e) => setEditedDueDate(e.target.value)}
+                      />
+                      <select
+                        value={editedPriority}
+                        onChange={(e) => setEditedPriority(e.target.value)}
                       >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`list ${task.priority}`}
-                          >
-                            <div
-                              className="drag-handle"
-                              {...provided.dragHandleProps}
-                            >
-                              ☰
-                            </div>
-                            {editingTaskId === task.id ? (
-                              <div className="edit-mode">
-                                <input
-                                  type="text"
-                                  value={editedTaskValue}
-                                  onChange={(e) => setEditedTaskValue(e.target.value)}
-                                  onKeyPress={(e) => e.key === "Enter" && saveEditedTask(task.id)}
-                                  autoFocus
-                                />
-                                <input
-                                  type="date"
-                                  value={editedDueDate}
-                                  onChange={(e) => setEditedDueDate(e.target.value)}
-                                />
-                                <select
-                                  value={editedPriority}
-                                  onChange={(e) => setEditedPriority(e.target.value)}
-                                >
-                                  <option value="low">Low</option>
-                                  <option value="medium">Medium</option>
-                                  <option value="high">High</option>
-                                </select>
-                                <div className="edit-actions">
-                                  <button onClick={() => saveEditedTask(task.id)}>Save</button>
-                                  <button onClick={cancelEditing}>Cancel</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="display-mode">
-                                <button
-                                  className="check-button"
-                                  onClick={() => toggleCompletion(task.id)}
-                                >
-                                  {task.completed ? "✔️" : "◻️"}
-                                </button>
-                                <li
-                                  style={{
-                                    textDecoration: task.completed ? "line-through" : "none",
-                                    color: task.completed ? "#888" : "#333",
-                                  }}
-                                >
-                                  {task.value} {task.dueDate && `(Due: ${task.dueDate})`}
-                                </li>
-                                <button className="edit" onClick={() => startEditing(task)}>
-                                <FaRegEdit />
-                                </button>
-                                <button className="del" onClick={() => handleDelete(task.id)}>
-                                <IoMdRemoveCircleOutline />
-                                </button>
-                                <button className="share" onClick={() => shareTask(task.id)}>
-                                <MdShare />                                
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </ul>
-                )}
-              </Droppable>
-            ) : (
-              <p>No tasks to display.</p>
-            )}
-          </DragDropContext>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                      <div className="edit-actions">
+                        <button onClick={() => saveEditedTask(task.id)}>Save</button>
+                        <button onClick={cancelEditing}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="display-mode">
+                      <button
+                        className="check-button"
+                        onClick={() => toggleCompletion(task.id)}
+                      >
+                        {task.completed ? "✔️" : "◻️"}
+                      </button>
+                      <li
+                        style={{
+                          textDecoration: task.completed ? "line-through" : "none",
+                          color: task.completed ? "#888" : "#333",
+                        }}
+                      >
+                        {task.value} {task.dueDate && `(Due: ${task.dueDate})`}
+                      </li>
+                      <button className="edit" onClick={() => startEditing(task)}>
+                        Edit
+                      </button>
+                      <button className="del" onClick={() => handleDelete(task.id)}>
+                        Remove
+                      </button>
+                      <button className="share" onClick={() => shareTask(task.id)}>
+                        Share
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </ul>
+          ) : (
+            <p>No tasks to display.</p>
+          )}
         </div>
 
         <div className="form">
@@ -308,6 +274,7 @@ function ToDo() {
   );
 }
 
+// Notification component with copy button
 const Notification = ({ message, type }) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -330,7 +297,7 @@ const Notification = ({ message, type }) => {
             {message}
           </a>
           <button onClick={handleCopy} className="copy-button">
-            {isCopied ? "Copy" : "Copied!"}
+            {isCopied ? "Copied!" : "Copy"}
           </button>
         </div>
       ) : (
